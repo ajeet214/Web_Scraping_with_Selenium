@@ -7,13 +7,14 @@ import selenium.webdriver.support.expected_conditions as EC
 from bs4 import BeautifulSoup
 
 driver = Chrome()
+wait = WebDriverWait(driver, 5)
 
 driver.get('https://www.knx.org/knx-en/for-professionals/community/partners/?country=120')
-driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-primary.cb-enable').click()
+wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.btn.btn-primary.cb-enable'))).click()
 
 try:
     while True:
-        WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a#knx-load-button.load_more'))).click()
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a#knx-load-button.load_more'))).click()
         time.sleep(1)
 except selenium.common.exceptions.TimeoutException:
     pass
