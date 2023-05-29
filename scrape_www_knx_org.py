@@ -13,6 +13,7 @@ driver.get('https://www.knx.org/knx-en/for-professionals/community/partners/?cou
 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.btn.btn-primary.cb-enable'))).click()
 
 try:
+    # keep clicking the 'load_more' button as many times as it is clickable.
     while True:
         wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a#knx-load-button.load_more'))).click()
         time.sleep(1)
