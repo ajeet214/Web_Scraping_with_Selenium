@@ -10,6 +10,7 @@ driver = Chrome()
 wait = WebDriverWait(driver, 5)
 
 driver.get('https://www.knx.org/knx-en/for-professionals/community/partners/?country=120')
+# wait to click "Accept-all" cookie button
 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.btn.btn-primary.cb-enable'))).click()
 
 try:
