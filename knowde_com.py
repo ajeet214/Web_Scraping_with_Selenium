@@ -7,11 +7,13 @@ Date : June 14, 2023
 # import libraries
 import logging
 import os
+from typing import List, Dict, Optional
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.remote.webelement import WebElement
 import pandas as pd
 
 logging.basicConfig(filename='knoede_log.log',
@@ -36,7 +38,15 @@ class KnoedeData:
         self.wait.until(EC.visibility_of_element_located((By.ID, 'onetrust-accept-btn-handler'))).click()
 
     @staticmethod
-    def data_processing(prod):
+    def data_processing(prod: WebElement) -> Dict:
+        """this method process/parse the individual product information
+
+        Args:
+        prod: this is the selenium Webelement with the product container
+
+        Returns:
+             a dict of all the extracted product information for a single product
+        """
         brand = prod.find_element('xpath', './a/div[2]/div/p[1]').text
         item = prod.find_element('xpath', './a/div[2]/div/p[2]').text
         inci_name = prod.find_element('xpath', './a/div[2]/div/div[1]/span[2]').text
@@ -119,7 +129,14 @@ class KnoedeData:
             'grade': grade
         }
 
-    def single_page(self, page_num):
+    def single_page(self, page_num: int) -> List[Dict]:
+        """ this method scraps the data from the given page number of the website.
+
+        Args:
+        page_num: the page number to extract the data from
+
+        Returns: self.data(list of dict of all products on a given page)
+        """
 
         self.driver.get(f"{self.website}{page_num}")
         logging.info(f"-------page number {page_num} -------")
@@ -135,13 +152,29 @@ class KnoedeData:
 
         return self.data
 
-    def multiple_page(self, start, end):
+    def multiple_page(self, start: int, end: int) -> None:
+        """ the method iterates over the range of given page numbers.
+
+        Args:
+        start: the page number to start with
+        end: the page number to end with
+
+        Returns: None
+        """
 
         for page in range(start, end+1):
             self.single_page(page)
 
     @staticmethod
-    def save_data(data, path=os.getcwd()):
+    def save_data(data: List[Dict], path: Optional[str] = os.getcwd()) -> None:
+        """ save the data to a CSV file at the given path.
+
+        Args:
+        data: the data to save.
+        path: the path to save the file (the default is os.getcwd(), which saves the file in the current directory)
+
+        Returns: None
+        """
 
         df = pd.DataFrame(data)
         df.to_csv(f'{path}/cosmetics_data.csv', index=False)
@@ -150,7 +183,7 @@ class KnoedeData:
 if __name__ == '__main__':
 
     obj = KnoedeData()
-    # print(obj.single_page(3))
+    print(obj.single_page(3))
     # obj.save_data(obj.single_page(2))
     # print(obj.multiple_page(1, 3))
 
