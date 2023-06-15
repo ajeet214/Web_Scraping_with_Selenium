@@ -1,21 +1,20 @@
 """
 Project : Knowde
 Author : Ajeet
-Date : June 14, 2023
+Date : June 15, 2023
 """
-
 # import libraries
-import logging
 import os
+import logging
+import pandas as pd
+from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
 from selenium.webdriver import Chrome, ChromeOptions
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.remote.webelement import WebElement
-import pandas as pd
 
+# logging configurations
 logging.basicConfig(filename='knoede_log.log',
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -38,96 +37,77 @@ class KnoedeData:
         self.wait.until(EC.visibility_of_element_located((By.ID, 'onetrust-accept-btn-handler'))).click()
 
     @staticmethod
-    def data_processing(prod: WebElement) -> Dict:
+    def find_siblings(container: BeautifulSoup.string, category: str) -> str:
+        """this method returns the text value across the given category if found/available.
+        Args:
+        container: a 'BeautifulSoup.string' containing all the textual details of an individual product.
+        category: the name of the category across which we are trying to get the details.
+
+        Returns:
+        category_text: the details/value across the given text category
+        """
+        label = container.find("span", string=f"{category}: ")
+        if label:
+            category_text = label.next_sibling.text
+        else:
+            category_text = None
+
+        return category_text
+
+    def data_processing(self, page_source: str) -> None:
         """this method process/parse the individual product information
 
         Args:
-        prod: this is the selenium Webelement with the product container
+        page_source: this is the page source of the selenium webdriver
 
-        Returns:
-             a dict of all the extracted product information for a single product
+        Returns: None
         """
-        brand = prod.find_element('xpath', './a/div[2]/div/p[1]').text
-        item = prod.find_element('xpath', './a/div[2]/div/p[2]').text
-        inci_name = prod.find_element('xpath', './a/div[2]/div/div[1]/span[2]').text
+        soup = BeautifulSoup(page_source, 'html.parser')
+        product_containers = soup.select('div[data-cy="product-card"]')
 
-        try:
-            ingredient_origin = prod.find_element('xpath', './a/div[2]/div/div[3]/span[2]').text
-        except NoSuchElementException:
-            ingredient_origin = 'null'
-        try:
-            function = prod.find_element('xpath', './a/div[2]/div/div[2]/span[2]').text
-        except NoSuchElementException:
-            function = 'null'
-        try:
-            benefit_claims = prod.find_element('xpath', './a/div[2]/div/div[4]/span[2]').text
-        except NoSuchElementException:
-            benefit_claims = 'null'
-        try:
-            description = prod.find_element('xpath', './a/div[2]/div/p[3]').text
-        except NoSuchElementException:
-            description = 'null'
-        try:
-            labeling_claims = prod.find_element('xpath', './a/div[2]/div/div[5]/span[2]').text
-        except NoSuchElementException:
-            labeling_claims = 'null'
-        try:
-            compliance = prod.find_element('xpath', './a/div[2]/div/div[6]/span[2]').text
-        except NoSuchElementException:
-            compliance = 'null'
-        try:
-            hlb_value = prod.find_element('xpath', './a/div[2]/div/div[4]/span[2]').text
-        except NoSuchElementException:
-            hlb_value = 'null'
-        try:
-            end_uses = prod.find_element('xpath', '/a/div[2]/div/div[4]/span[2]').text
-        except NoSuchElementException:
-            end_uses = 'null'
-        try:
-            cas_no = prod.find_element('xpath', './a/div[2]/div/div[5]/span[2]').text
-        except NoSuchElementException:
-            cas_no = 'null'
-        try:
-            chemical_name = prod.find_element('xpath', './a/div[2]/div/div[2]/span[2]').text
-        except NoSuchElementException:
-            chemical_name = 'null'
-        try:
-            synonyms = prod.find_element('xpath', './a/div[2]/div/div[6]/span[2]').text
-        except NoSuchElementException:
-            synonyms = 'null'
-        try:
-            chemical_family = prod.find_element('xpath', './a/div[2]/div/div[5]/span[2]').text
-        except NoSuchElementException:
-            chemical_family = 'null'
-        try:
-            features = prod.find_element('xpath', './a/div[2]/div/div[7]/span[2]').text
-        except NoSuchElementException:
-            features = 'null'
-        try:
-            grade = prod.find_element('xpath', './a/div[2]/div/div[5]/span[2]').text
-        except NoSuchElementException:
-            grade = 'null'
+        for container in product_containers:
+            text_container = container.select_one('div[direction="column"]')
 
-        logging.info(f'Saving: {brand}')
-        return {
-            'brand': brand,
-            'item': item,
-            'inci_name': inci_name,
-            'ingredient_origin': ingredient_origin,
-            'function': function,
-            'benefit_claims': benefit_claims,
-            'description': description,
-            'labeling_claims': labeling_claims,
-            'compliance': compliance,
-            'hlb_value': hlb_value,
-            'end_uses': end_uses,
-            'cas_no': cas_no,
-            'chemical_name': chemical_name,
-            'synonyms': synonyms,
-            'chemical_family': chemical_family,
-            'features': features,
-            'grade': grade
-        }
+            brand = text_container.select_one('p[data-cy="product-brand-name"]').text
+            item = text_container.select_one('p[data-cy="product-name"]').text
+
+            inci_name = self.find_siblings(text_container, 'INCI Name')
+            ingredient_origin = self.find_siblings(text_container, 'Ingredient Origin')
+            function = self.find_siblings(text_container, 'Function')
+            benefit_claims = self.find_siblings(text_container, 'Benefit Claims')
+            labeling_claims = self.find_siblings(text_container, 'Labeling Claims')
+            compliance = self.find_siblings(text_container, 'Certifications & Compliance')
+            hlb_value = self.find_siblings(text_container, 'HLB Value')
+            end_uses = self.find_siblings(text_container, 'End Uses')
+            cas_no = self.find_siblings(text_container, 'CAS Number')
+            chemical_name = self.find_siblings(text_container, 'Chemical Name')
+            synonyms = self.find_siblings(text_container, 'Synonyms')
+            chemical_family = self.find_siblings(text_container, 'Chemical Family')
+            features = self.find_siblings(text_container, 'Features')
+            grade = self.find_siblings(text_container, 'Grade')
+
+            description = text_container.select('p')[-1].text
+            logging.info(f'Saving: {brand}')
+
+            self.data.append({
+                    'brand': brand,
+                    'item': item,
+                    'inci_name': inci_name,
+                    'ingredient_origin': ingredient_origin,
+                    'function': function,
+                    'benefit_claims': benefit_claims,
+                    'labeling_claims': labeling_claims,
+                    'compliance': compliance,
+                    'hlb_value': hlb_value,
+                    'end_uses': end_uses,
+                    'cas_no': cas_no,
+                    'chemical_name': chemical_name,
+                    'synonyms': synonyms,
+                    'chemical_family': chemical_family,
+                    'features': features,
+                    'grade': grade,
+                    'description': description
+            })
 
     def single_page(self, page_num: int) -> List[Dict]:
         """ this method scraps the data from the given page number of the website.
@@ -147,12 +127,13 @@ class KnoedeData:
             if count == 0 or count == count + 4:
                 product.find_element(By.CSS_SELECTOR, 'svg[data-testid="icon-icomoon--keyboard_arrow_down"]').click()
 
-            self.data.append(self.data_processing(product))
             count += 1
+
+        self.data_processing(self.driver.page_source)
 
         return self.data
 
-    def multiple_page(self, start: int, end: int) -> None:
+    def multiple_page(self, start: int, end: int) -> List[Dict]:
         """ the method iterates over the range of given page numbers.
 
         Args:
@@ -164,6 +145,8 @@ class KnoedeData:
 
         for page in range(start, end+1):
             self.single_page(page)
+
+        return self.data
 
     @staticmethod
     def save_data(data: List[Dict], path: Optional[str] = os.getcwd()) -> None:
@@ -177,15 +160,18 @@ class KnoedeData:
         """
 
         df = pd.DataFrame(data)
-        df.to_csv(f'{path}/cosmetics_data.csv', index=False)
+        file_location = f'{path}/cosmetics_data.csv'
+        df.to_csv(file_location, index=False)
+        logging.info(f"------------data is saved at {file_location}------------")
 
 
 if __name__ == '__main__':
 
     obj = KnoedeData()
-    print(obj.single_page(3))
-    # obj.save_data(obj.single_page(2))
-    # print(obj.multiple_page(1, 3))
+    # print(obj.single_page(1))
+    # obj.save_data(obj.single_page(1))
+    # print(obj.multiple_page(2, 3))
+    # print(obj.save_data(obj.multiple_page(1, 3)))
 
 
 """
