@@ -111,18 +111,22 @@ class Indeed:
             total_job_list += self.data_extraction(job_containers)
 
             try:
+                # Look for the "Next" button to navigate to the next page of job listings
                 next_button = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((
                     By.CSS_SELECTOR, 'a[data-testid="pagination-page-next"]')))
                 next_button.click()
             except TimeoutException:
+                # If the "Next" button is not found, it means there are no more pages, so break the loop
                 break
 
             try:
+                # Check if a popup appears and close it (if present)
                 popup_button = WebDriverWait(self.driver, 2).until(
                     EC.presence_of_element_located((
                         By.CSS_SELECTOR, 'div#mosaic-desktopserpjapopup>div>button[aria-label="close"]')))
                 popup_button.click()
             except TimeoutException:
+                # If no popup is found, continue without any action
                 pass
 
         return total_job_list
