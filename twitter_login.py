@@ -50,8 +50,8 @@ def login_twitter(username: str, password: str) -> None:
 
 
 if __name__ == "__main__":
-    your_username = "ajeet214"
-    your_password = "Giahungisaboy"
+    your_username = "your_twitter_username_here"
+    your_password = "your_twitter_password_here"
 
     # Call the login_twitter function with your Twitter credentials
     login_twitter(your_username, your_password)
