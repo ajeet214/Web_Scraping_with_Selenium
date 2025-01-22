@@ -6,7 +6,7 @@ Most of these scripts were created to assist the community on Stack Overflow by 
 
 ## Script Naming Convention :
 The scripts are named based on the websites they target for scraping. 
-For instance, a script designed to scrape data from `https://www.yomiuri.co.jp/editorial/` is named `yomiuri_co_jp.py`. 
+For instance, a script designed to scrape data from `https://www.abcd.co.ef/editorial/` is named `abcd_co_ef.py`. 
 This naming convention makes it easy to identify the source website for each script.
 
 ## Stack Overflow References : 
